@@ -299,7 +299,3 @@ https://sepolia.etherscan.io/tx/0x6514ec1bd5877ce0f566c6b3c60cce2ce12d1ce1aa3898
 Environment: Injected Provider - Metamask
 
 https://sepolia.etherscan.io/tx/0x5e1755af6caa5bd25613c73f91eb6dd258be0098f166ecc2b8131d745bd18627
-
-## Project Review
-
-## Updating Your Inbox Project to Solc v0.8.9
