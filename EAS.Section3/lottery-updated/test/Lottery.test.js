@@ -31,8 +31,8 @@ describe("Lottery Contract", () => {
       from: accounts[0],
     });
 
-    assert.equal(accounts[0], players[0]);
-    assert.equal(1, players.length);
+    assert.strictEqual(accounts[0], players[0]);
+    assert.strictEqual(1, players.length);
   });
   it("allows multiple accounts to enter", async () => {
     await lottery.methods.enter().send({
@@ -52,11 +52,12 @@ describe("Lottery Contract", () => {
       from: accounts[0],
     });
 
-    assert.equal(accounts[0], players[0]);
-    assert.equal(accounts[1], players[1]);
-    assert.equal(accounts[2], players[2]);
-    assert.equal(3, players.length);
+    assert.strictEqual(accounts[0], players[0]);
+    assert.strictEqual(accounts[1], players[1]);
+    assert.strictEqual(accounts[2], players[2]);
+    assert.strictEqual(3, players.length);
   });
+
   it("requires a minimum amount of ether to enter", async () => {
     try {
       await lottery.methods.enter().send({

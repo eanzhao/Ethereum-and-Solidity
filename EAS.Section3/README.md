@@ -212,14 +212,41 @@ contract Lottery {
   function pickWinner() public {
     uint index = random() % players.length;
     players[index].transfer(this.balance);
-    players = new address[](0);
   }
 }
 ```
 
 ## Resetting Contract State
 
+`players = new address[](0);`
 
+```solidity
+pragma solidity ^0.4.17;
+
+contract Lottery {
+  address public manager;
+  address[] public players;
+
+  function Lottery() public {
+    manager = msg.sender;
+  }
+
+  function enter() public payable {
+    require(msg.value > .01 ether);
+    players.push(msg.sender);
+  }
+
+  function random() private view returns (uint) {
+    return uint(keccak256(block.difficulty, now, players));
+  }
+
+  function pickWinner() public {
+    uint index = random() % players.length;
+    players[index].transfer(this.balance);
+    players = new address[](0);
+  }
+}
+```
 
 ## Requiring Managers & Function Modifiers
 
@@ -293,4 +320,51 @@ contract Lottery {
         return players;
     }
 }
+```
+
+## Try-Catch Assertions
+
+```js
+  it("requires a minimum amount of ether to enter", async () => {
+  try {
+    await lottery.methods.enter().send({
+      from: accounts[0],
+      value: 0,
+    });
+  } catch (err) {
+    assert.ok(err);
+  }
+});
+```
+
+will be better:
+
+```js
+  it("requires a minimum amount of ether to enter", async () => {
+  try {
+    await lottery.methods.enter().send({
+      from: accounts[0],
+      value: 0,
+    });
+    assert(false);
+  } catch (err) {
+    // 代码被err短路，没有走到assert(false)
+    assert(err);
+  }
+});
+```
+
+## Testing Function Modifiers
+
+```js
+  it("only manager can call pickWinner", async () => {
+  try {
+    await lottery.methods.pickWinner().send({
+      from: accounts[1],
+    });
+    assert(false);
+  } catch (err) {
+    assert(err);
+  }
+});
 ```

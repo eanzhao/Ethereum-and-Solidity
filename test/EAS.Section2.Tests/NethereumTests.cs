@@ -1,38 +1,70 @@
 using System.Diagnostics;
+using System.Text.Json.Nodes;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Web3;
-using Newtonsoft.Json;
+using Nethereum.Web3.Accounts;
 using Shouldly;
 
 namespace EAS.Section2.Tests;
 
 public class NethereumTests
 {
+    private readonly Web3 _web3 = new(new Account(TestData.PrivateKey), TestData.Url);
+    private const string SolFilePath = "contracts/Inbox.sol";
+
     [Fact]
     public async Task<string[]> ListAccountsTest()
     {
-        var web3 = new Web3("http://localhost:7545");
-        var accounts = await web3.Eth.Accounts.SendRequestAsync();
+        var accounts = await _web3.Eth.Accounts.SendRequestAsync();
         accounts.Length.ShouldBePositive();
         return accounts;
     }
 
     [Fact]
-    public async Task DeployContractTest()
+    public async Task<string> DeployContractTest()
     {
-        var accounts = await ListAccountsTest();
-        var output = await CompileSolidityFileAsync("contracts/Inbox.sol");
-        
-        var web3 = new Web3("http://localhost:7545");
+        //var accounts = await ListAccountsTest();
+        var address = TestData.Address;
+        var (abi, bytecode) = await GetAbiAndBinAsync(SolFilePath);
 
-        var deploymentMessage = new InboxDeployment
-        {
-            InitialMessage = "Hi There"
-        };
-        
-        var deploymentHandler = web3.Eth.GetContractDeploymentHandler<InboxDeployment>();
-        var transactionReceipt = await deploymentHandler.SendRequestAndWaitForReceiptAsync(deploymentMessage);
+        var gas = await _web3.Eth.DeployContract.EstimateGasAsync(abi, bytecode, address, "Hi There");
+        var transactionReceipt = await _web3.Eth.DeployContract.SendRequestAndWaitForReceiptAsync(
+            abi,
+            bytecode,
+            address,
+            gas,
+            new HexBigInteger(0),
+            null,
+            "Hi There");
         var contractAddress = transactionReceipt.ContractAddress;
+        contractAddress.ShouldNotBeNull();
+        return contractAddress;
+    }
+
+    [Fact]
+    public async Task GetMessageTest()
+    {
+        var contractAddress = await DeployContractTest();
+        var (abi, _) = await GetAbiAndBinAsync(SolFilePath);
+        var contract = _web3.Eth.GetContract(abi, contractAddress);
+        var getMessage = contract.GetFunction("getMessage");
+        var message = await getMessage.CallAsync<string>();
+        message.ShouldBe("Hi There");
+    }
+
+    private async Task<(string, string)> GetAbiAndBinAsync(string solidityFilePath)
+    {
+        var output = await CompileSolidityFileAsync(solidityFilePath);
+        var json = JsonNode.Parse(output)!["contracts"]!.AsObject();
+        var combined = new JsonObject();
+        foreach (var foo in json)
+        {
+            combined = foo.Value!.AsObject();
+        }
+
+        var abi = combined["abi"]!.ToJsonString();
+        var bin = combined["bin"]!.ToString();
+        return (abi, bin);
     }
 
     private async Task<string> CompileSolidityFileAsync(string solidityFilePath)

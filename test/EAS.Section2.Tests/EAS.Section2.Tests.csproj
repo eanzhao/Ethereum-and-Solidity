@@ -28,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="..\..\EAS.Section2\inbox\contracts\Inbox.sol">
+        <Content Include="..\..\EAS.Section2\inbox-updated\contracts\Inbox.sol">
             <Link>contracts\Inbox.sol</Link>
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
